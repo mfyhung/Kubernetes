@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hpo-deployment
+  namespace: hpo
+  #labels:
+    #app: hpo_test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hpo_test
+  template:
+    metadata:
+      labels:
+        app: hpo_test
+    spec:
+      containers:
+      - name: hpotestcontainer
+        image: 244857349068.dkr.ecr.ap-east-1.amazonaws.com/hpoanalysis:2.0
+        ports:
+        - containerPort: 8051
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hpo-loadbalancer
+  namespace: hpo
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: "ELBSecurityPolicy-FS-1-2-Res-2020-10"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:ap-east-1:244857349068:certificate/e67dc8b9-572e-4339-9f04-df29cd8861c2 
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    service.beta.kubernetes.io/aws-load-balancer-name: "Hpo-k8s-loadbalancer"
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  ports:
+    - port: 443
+      targetPort: 8051
+  type: LoadBalancer
+  selector:
+    app: hpo_test
